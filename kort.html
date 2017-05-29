@@ -1,0 +1,337 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>GoGreen splash</title>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+    <script type="text/javascript" src="jquery/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+
+    <link href="css/Styles.css" rel="stylesheet" />
+    <link href="css/Site.css" rel="stylesheet" />
+    <script src="scripts/common.js"></script>
+
+    <!-- googleAPI javascript nøgle downloaded fra: https://developers.google.com/maps/documentation/javascript/ -->
+    <!-- projektnavn : GoGreen Copenhagen-->
+    <script src="https://maps.googleapis.com/maps/api/js?file=api&key=AIzaSyCHV8n1TI5AcEtBAnmFsL7cCJcyHg9WYjU"></script>
+     
+
+    <style TYPE="text/css">
+
+        .btn-default { 
+            background-color:black;
+            color:white;
+            border:none;
+            border-radius: 0px;
+        } 
+
+        .btn-active { 
+            background-color:#a4c3b6;
+            color:white;
+        } 
+
+        .btn-default:hover, .btn-active:hover { 
+            background-color:#a4c3b6;
+            color:black;
+        } 
+
+        #tblctrls td {
+            padding: 5px;
+        }
+
+    </style>
+
+
+    <script type="text/javascript">
+
+
+        var userclick = 0;
+        function setuserclick(uk)
+        {
+            $("#cmdklik1").removeClass("btn-active");
+            $("#cmdklik2").removeClass("btn-active");
+
+            $("#cmdklik" + uk).addClass("btn-active");
+            userclick = uk;
+
+            //Fjern focus
+            document.body.focus();
+        }
+
+        
+        function clearclick() {
+
+            //Luk infowindow
+            infowindow.close();
+
+            //Fjern rute
+            //directionsDisplay.setMap(null);
+            directionsDisplay.setDirections({ routes: [] });
+
+            //Centrer mig
+            map.setCenter(myLatLng, 14);
+
+            //Fjern focus
+            document.body.focus();
+        }
+
+
+        var map;
+
+        var directionsService = new google.maps.DirectionsService();
+        var directionsDisplay = new google.maps.DirectionsRenderer();
+
+
+        function initMap() {
+            //myLatLng = { lat: 55.673224, lng: 12.462076 };
+            myLatLng = { lat: 55.676072, lng: 12.568649 };
+
+            map = new google.maps.Map(document.getElementById('divmap'), {
+                zoom: 14,
+                center: myLatLng
+            });
+
+            //Initialiser rute
+            directionsDisplay.setMap(map);
+
+            getgeopos();
+            shopikoner();
+        }
+
+
+        //Min position *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+
+
+        function getgeopos() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(drawMe, geoerror);
+            } else {
+                alert("Kan ikke aflæse din lokation");
+            }
+        }
+
+
+        function geoerror(err) {
+            alert("Fejl: " + err.code + " " + err.message);
+        }
+
+
+        var first = true;
+        var mymarker;
+        var myLatLng;
+
+
+        // Her tegnes jeg på kortet
+        function drawMe(pos) {
+            // mit ikon - jeg er grøn!
+            var image = "graphics/0.png";
+            //min position lat&lng som bliver lavet om til en javascript klasse (JSON)
+            myLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+            // Her hentes min tilhørende data
+            if (first) {
+                mymarker = new google.maps.Marker({
+                    position: myLatLng,
+                    map: map,
+                    icon: image,
+                    title:"Mig selv"
+                });
+
+                first = false;
+                map.panTo(myLatLng);
+            }
+            else {
+                mymarker.setPosition(myLatLng);
+            }
+
+            //Centrer mig
+            if ($("#chkFollowme").prop("checked")) {
+                map.panTo(myLatLng);
+            }
+
+            //Refresh hvert 5 sek
+            setTimeout(getgeopos, 5000);
+        }
+
+
+        //Shops *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+
+        var markers = [];
+        var infowindow;
+
+
+        function markerclick(marker) {
+
+            //Vis information
+            if (userclick == 1) {
+                infowindow.setContent(marker.iwindow);
+                infowindow.open(map, marker);
+
+                //Pannto
+                map.panTo(marker.position);
+            }
+
+            //Tegn rute
+            if (userclick == 2) {
+
+                var request = {
+                    origin: mymarker.position,
+                    destination: marker.position,
+                    travelMode: google.maps.DirectionsTravelMode.BICYCLING
+                };
+
+                directionsService.route(request, function (response, status) {
+                    if (status == google.maps.DirectionsStatus.OK) {
+                        directionsDisplay.setDirections(response);
+                    }
+                });
+            }
+        }
+
+
+        function shopikoner() {
+		
+            markers = [];
+            iwindows = [];
+
+            infowindow = new google.maps.InfoWindow();
+
+
+            $.getJSON('http://localhost/Gogreen/getshops.php', 'lat=' + myLatLng.lat + '&long=' + myLatLng.lng, function (shops) {
+
+
+				// Her indsættes nye markører for alle butikker.
+				for (var i = 0; i < shops.data.length; i++) {
+	
+					//Render
+	
+					var shopimage = "graphics/" + shops.data[i].kategori + ".png";
+					var shopLatLng = { lat: shops.data[i].latitude, lng: shops.data[i].longitude };
+	
+					markers[i] = new google.maps.Marker({
+						position: shopLatLng,
+						map: map,
+						icon: shopimage,
+						iwindow:"<h4>" + shops.data[i].navn + "</h4><p>" + shops.data[i].info + "</p>"
+					});
+	
+					var marker = markers[i];
+					google.maps.event.addListener(marker, 'click', function () {
+						markerclick(this);
+					});
+				}
+
+            });  //php slut
+
+        }
+
+
+        //Standard *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+
+
+        function resizemap() {
+
+            var workarea = $("#divWorkarea");
+
+            $("#divmap").css("height", (workarea.height() - 47) + "px");
+            $("#divmap").css("width", (workarea.width() + 22) + "px");
+        }
+
+
+        function initialize() {
+            setuserclick(1);
+            checksize();
+            resizemap();
+            initMap();
+        }
+
+
+    </script>
+
+
+
+</head>
+
+<body onload="initialize();" onresize="checksize(); resizemap();">
+
+
+    <div class="container-fluid" style="padding:0px">
+        <div id="banner" class="row">
+            <div class='col-sm-12' >
+                <center><h1 style="padding-left:10px; color:white; font-size:18pt">GoGreen</h1></center>
+            </div>
+        </div>
+
+        <nav class="navbar navbar-inverse navbar-toggleable">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle pull-left" data-toggle="collapse" data-target="#myNavbar">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>                        
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" id="myNavbar">
+                    <ul id="tabs" class="nav navbar-nav" style="margin-top:0px !important">
+                        <li><a href="index.html">Forside</a></li>
+                        <li class="tabactive"><a href="kort.html">Kort</a></li>
+                        <li><a href="shops.html">Butikker</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+
+        <div id=divWorkarea style="min-height:600px; background-color:aliceblue">
+    
+            <div class="row">
+                <div class='col-sm-12'>
+
+                    <div id="divmap" style="width:500px; height:500px;; background-color:yellow"></div>
+                </div>
+            </div>
+
+
+            <div class="row">
+                <div class='col-sm-12'>
+                    <table id=tblctrls>
+                        <tr>
+                            <td><input id=chkFollowme type="checkbox" onclick="getgeopos();" /> Følg mig</td>
+                            <td style="padding-left:25px">
+                                Klik = 
+                            </td>
+                            <td>
+                                <div class="btn-toolbar" role="toolbar" aria-label="...">
+                                    <div class="btn-group" role="group" aria-label="...">
+                                      <button type="button" id="cmdklik1" onclick="setuserclick(1);" class="btn btn-default">Info</button>
+                                      <button type="button" id="cmdklik2" onclick="setuserclick(2);" class="btn btn-default">Rute</button>
+                                    </div>
+                                    <div class="btn-group" role="group" aria-label="...">
+                                      <button type="button" onclick="clearclick();" class="btn btn-default">Cls</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    
+        <div id="divFooter">
+            <div class='row' style='padding:10px;'>
+                <div class='col-sm-12'>
+            		<span style="color:#a4c3b6; font-size:9pt">Af Sophie Præstmark, multimediesigner CPHbusiness</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+</body>
+</html>

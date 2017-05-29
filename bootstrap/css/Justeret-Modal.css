@@ -1,0 +1,13 @@
+.modal-title {
+	font-size:24px;
+}
+
+.modal-content {
+	border-radius: 0px;
+}
+
+.modal-header, .modal-footer
+{
+	border:none;
+}
+

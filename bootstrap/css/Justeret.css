@@ -1,0 +1,38 @@
+.modal-title {
+	font-size:24px;
+}
+
+.modal-content {
+	border-radius: 0px;
+}
+
+.modal-content, .alert { border-radius: 0px; }
+.alert-danger { color: white; background-color: #F1260B; border: none; }
+
+
+.modal-header, .modal-footer
+{
+	border:none;
+}
+
+.btn:hover {
+	background-color:#337ab7;
+	color:#FFFFFF;
+}
+
+.list-group-item:hover {
+	background-color:#337ab7;
+	color:#FFFFFF;
+}
+
+[disabled].btn
+{
+	color:#000000;
+
+}
+
+.list-group-item
+{
+    cursor: pointer;
+}
+

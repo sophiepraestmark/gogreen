@@ -1,0 +1,13 @@
+﻿html { height:100%; }
+body { height:100%; border:0px none; }
+form { height:100%; }
+
+
+BODY
+{
+	margin: 0px;
+	border: none;
+	font-family: Arial;
+    overflow-x:hidden;
+}
+
